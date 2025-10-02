@@ -23,9 +23,9 @@ const auth = async (req, res, next) => {
     }
 
     req.user = user;
-    next();
+    return next();
   } catch (error) {
-    res.status(401).json({
+    return res.status(401).json({
       success: false,
       error: 'Invalid token.'
     });
@@ -34,17 +34,17 @@ const auth = async (req, res, next) => {
 
 const adminAuth = async (req, res, next) => {
   try {
-    await auth(req, res, () => {
+    return await auth(req, res, () => {
       if (req.user.role !== 'admin') {
         return res.status(403).json({
           success: false,
           error: 'Access denied. Admin privileges required.'
         });
       }
-      next();
+      return next();
     });
   } catch (error) {
-    res.status(401).json({
+    return res.status(401).json({
       success: false,
       error: 'Authentication failed.'
     });

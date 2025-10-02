@@ -132,7 +132,7 @@ const handleValidationErrors = (req, res, next) => {
       }))
     });
   }
-  next();
+  return next();
 };
 
 // Routes
@@ -161,7 +161,7 @@ router.post('/auth/register', validateUser, handleValidationErrors, async (req, 
       { expiresIn: process.env.JWT_EXPIRE || '7d' }
     );
     
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: {
         user: user.toJSON(),
@@ -171,7 +171,7 @@ router.post('/auth/register', validateUser, handleValidationErrors, async (req, 
     });
   } catch (error) {
     console.error('Error registering user:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to register user',
       message: error.message
@@ -231,7 +231,7 @@ router.post('/auth/login', [
       { expiresIn: process.env.JWT_EXPIRE || '7d' }
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         user: user.toJSON(),
@@ -241,7 +241,7 @@ router.post('/auth/login', [
     });
   } catch (error) {
     console.error('Error during login:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Login failed',
       message: error.message
@@ -255,13 +255,13 @@ router.post('/auth/logout', auth, async (req, res) => {
     // In a stateless JWT system, logout is handled client-side
     // You could implement token blacklisting here if needed
     
-    res.json({
+    return res.json({
       success: true,
       message: 'Logout successful'
     });
   } catch (error) {
     console.error('Error during logout:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Logout failed',
       message: error.message
@@ -272,13 +272,13 @@ router.post('/auth/logout', auth, async (req, res) => {
 // GET /api/auth/me - Get current user profile
 router.get('/auth/me', auth, async (req, res) => {
   try {
-    res.json({
+    return res.json({
       success: true,
       data: req.user
     });
   } catch (error) {
     console.error('Error getting user profile:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get user profile',
       message: error.message
@@ -322,14 +322,14 @@ router.put('/auth/me', auth, [
     
     await req.user.save();
     
-    res.json({
+    return res.json({
       success: true,
       data: req.user.toJSON(),
       message: 'Profile updated successfully'
     });
   } catch (error) {
     console.error('Error updating profile:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update profile',
       message: error.message
@@ -366,13 +366,13 @@ router.post('/auth/change-password', auth, [
     user.password = newPassword;
     await user.save();
     
-    res.json({
+    return res.json({
       success: true,
       message: 'Password changed successfully'
     });
   } catch (error) {
     console.error('Error changing password:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to change password',
       message: error.message
@@ -403,7 +403,7 @@ router.get('/users', adminAuth, async (req, res) => {
     sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
     
     // Calculate pagination
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (parseInt(page, 10) - 1) * parseInt(limit, 10);
     
     // Execute query with pagination
     const [users, total] = await Promise.all([
@@ -411,24 +411,24 @@ router.get('/users', adminAuth, async (req, res) => {
         .select('-password')
         .sort(sort)
         .skip(skip)
-        .limit(parseInt(limit))
+        .limit(parseInt(limit, 10))
         .lean(),
       User.countDocuments(query)
     ]);
     
-    res.json({
+    return res.json({
       success: true,
       data: users,
       pagination: {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: parseInt(page, 10),
+        limit: parseInt(limit, 10),
         total,
-        pages: Math.ceil(total / parseInt(limit))
+        pages: Math.ceil(total / parseInt(limit, 10))
       }
     });
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch users',
       message: error.message
@@ -448,13 +448,13 @@ router.get('/users/:id', adminAuth, async (req, res) => {
       });
     }
     
-    res.json({
+    return res.json({
       success: true,
       data: user
     });
   } catch (error) {
     console.error('Error fetching user:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch user',
       message: error.message
@@ -477,14 +477,14 @@ router.post('/users', adminAuth, validateUser, handleValidationErrors, async (re
     const user = new User(req.body);
     await user.save();
     
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: user.toJSON(),
       message: 'User created successfully'
     });
   } catch (error) {
     console.error('Error creating user:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create user',
       message: error.message
@@ -527,14 +527,14 @@ router.put('/users/:id', adminAuth, validateUserUpdate, handleValidationErrors, 
     
     await user.save();
     
-    res.json({
+    return res.json({
       success: true,
       data: user.toJSON(),
       message: 'User updated successfully'
     });
   } catch (error) {
     console.error('Error updating user:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update user',
       message: error.message
@@ -554,14 +554,14 @@ router.delete('/users/:id', adminAuth, async (req, res) => {
       });
     }
     
-    res.json({
+    return res.json({
       success: true,
       data: user.toJSON(),
       message: 'User deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting user:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete user',
       message: error.message
@@ -580,13 +580,13 @@ router.get('/stats', async (req, res) => {
       timestamp: new Date().toISOString()
     };
     
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
   } catch (error) {
     console.error('Error fetching stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch stats',
       message: error.message
@@ -595,7 +595,7 @@ router.get('/stats', async (req, res) => {
 });
 
 // Error handling for API routes
-router.use((error, req, res, next) => {
+router.use((error, req, res, _next) => {
   console.error('API Error:', error);
   
   res.status(error.status || 500).json({
