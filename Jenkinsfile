@@ -44,7 +44,7 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '10'))
         
         // Timeout for the entire pipeline
-        timeout(time: 45, unit: 'MINUTES')
+        timeout(time: 90, unit: 'MINUTES')
         
         // Add timestamps to console output
         timestamps()
